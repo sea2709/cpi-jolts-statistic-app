@@ -37,7 +37,7 @@ def load_us_employment_data():
         + "FROM bls_employment_timeseries as ts "
         + "JOIN cybersyn.bls_employment_attributes AS att ON (ts.variable = att.variable) "
         + "WHERE geo_id = 'country/USA' AND att.unit = 'Level' AND REPORT = 'JOLTS' AND FREQUENCY = 'Annual'")
-    return cur.fetch_pandas_all()
+    return cur.fetchall()
 
 us_anual_cpi_df = load_us_annual_cpi_data()
 st.dataframe(us_anual_cpi_df)
