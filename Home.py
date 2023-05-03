@@ -19,11 +19,13 @@ cur = conn.cursor()
 # Load data table
 @st.cache_resource
 def load_us_annual_cpi_data():    
+    # cur.execute("SELECT VARIABLE, VARIABLE_NAME, VALUE, DATE FROM BLS_PRICE_TIMESERIES "
+    #     + "WHERE GEO_ID = 'country/USA' AND VARIABLE IN ('CPI:_Food,_Not_seasonally_adjusted,_Annual', "
+    #     + "'CPI:_All_items,_Not_seasonally_adjusted,_Annual', "
+    #     + "'CPI:_Energy,_Not_seasonally_adjusted,_Annual', "
+    #     + "'CPI:_All_items_less_food_and_energy,_Not_seasonally_adjusted,_Annual')")
     cur.execute("SELECT VARIABLE, VARIABLE_NAME, VALUE, DATE FROM BLS_PRICE_TIMESERIES "
-        + "WHERE GEO_ID = 'country/USA' AND VARIABLE IN ('CPI:_Food,_Not_seasonally_adjusted,_Annual', "
-        + "'CPI:_All_items,_Not_seasonally_adjusted,_Annual', "
-        + "'CPI:_Energy,_Not_seasonally_adjusted,_Annual', "
-        + "'CPI:_All_items_less_food_and_energy,_Not_seasonally_adjusted,_Annual')")
+        + "WHERE GEO_ID = 'country/USA' AND VARIABLE LIKE '%_Not_seasonally_adjusted,_Annual%'")
     return cur.fetch_pandas_all()
 
 # @st.cache_resource
