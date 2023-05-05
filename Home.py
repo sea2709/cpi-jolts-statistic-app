@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-from functions import init_connection
+from functions import init_connection, build_category_cpi_df
 
 st.set_page_config(
      page_title="U.S. Bureau of labor statistics",
@@ -18,20 +18,10 @@ cur = conn.cursor()
 
 # Load data table
 @st.cache_resource
-def load_us_annual_cpi_data():    
-    # cur.execute("SELECT VARIABLE, VARIABLE_NAME, VALUE, DATE FROM BLS_PRICE_TIMESERIES "
-    #     + "WHERE GEO_ID = 'country/USA' AND VARIABLE IN ('CPI:_Food,_Not_seasonally_adjusted,_Annual', "
-    #     + "'CPI:_All_items,_Not_seasonally_adjusted,_Annual', "
-    #     + "'CPI:_Energy,_Not_seasonally_adjusted,_Annual', "
-    #     + "'CPI:_All_items_less_food_and_energy,_Not_seasonally_adjusted,_Annual')")
+def load_us_annual_cpi_data(): 
     cur.execute("SELECT VARIABLE, VARIABLE_NAME, VALUE, DATE FROM BLS_PRICE_TIMESERIES "
         + "WHERE GEO_ID = 'country/USA' AND VARIABLE LIKE '%_Not_seasonally_adjusted,_Annual%'")
     return cur.fetch_pandas_all()
-
-# @st.cache_resource
-# def load_price_attributes_data():
-#     cur.execute("SELECT * FROM BLS_PRICE_ATTRIBUTES WHERE REPORT = 'Consumer Price Index'")
-#     return cur.fetch_pandas_all()
 
 @st.cache_resource
 def load_us_employment_data():
@@ -45,26 +35,19 @@ us_anual_cpi_df = load_us_annual_cpi_data()
 us_anual_cpi_df['YEAR'] = pd.DatetimeIndex(us_anual_cpi_df['DATE']).year
 us_anual_cpi_df= us_anual_cpi_df.sort_values(by=['YEAR'])
 
-def build_category_cpi_df(key, variable):
-    df = us_anual_cpi_df[us_anual_cpi_df['VARIABLE'] == variable];
-    df[key] = df['VALUE']
-    df = df.filter(items=[key, 'YEAR'])
-    df.set_index('YEAR', inplace=True)
-
-    return df
-
-food_df = build_category_cpi_df('FOOD', 'CPI:_Food,_Not_seasonally_adjusted,_Annual')
-all_items_df = build_category_cpi_df('ALL ITEMS', 'CPI:_All_items,_Not_seasonally_adjusted,_Annual')
-energy_df = build_category_cpi_df('ENERGY', 'CPI:_Energy,_Not_seasonally_adjusted,_Annual')
-all_items_less_food_and_energy_df = build_category_cpi_df('ALL ITEMS LESS FOOD AND ENERGY', 'CPI:_All_items_less_food_and_energy,_Not_seasonally_adjusted,_Annual')
+food_df = build_category_cpi_df(us_anual_cpi_df, 'FOOD', 'CPI:_Food,_Not_seasonally_adjusted,_Annual')
+all_items_df = build_category_cpi_df(us_anual_cpi_df, 'ALL ITEMS', 'CPI:_All_items,_Not_seasonally_adjusted,_Annual')
+energy_df = build_category_cpi_df(us_anual_cpi_df, 'ENERGY', 'CPI:_Energy,_Not_seasonally_adjusted,_Annual')
+all_items_less_food_and_energy_df = build_category_cpi_df(us_anual_cpi_df, 'ALL ITEMS LESS FOOD AND ENERGY', 'CPI:_All_items_less_food_and_energy,_Not_seasonally_adjusted,_Annual')
 
 main_categories_cpi_df = pd.merge(left=all_items_df, right=food_df, how='outer', left_index=True, right_index=True)
 main_categories_cpi_df = main_categories_cpi_df.merge(energy_df, how='outer', left_index=True, right_index=True)
-main_categories_cpi_df = main_categories_cpi_df.merge(all_items_less_food_and_energy_df, how='outer', left_on='YEAR', right_on='YEAR')
+main_categories_cpi_df = main_categories_cpi_df.merge(all_items_less_food_and_energy_df, how='outer', left_index=True, right_index=True)
 
 with st.container():
     st.header('Consumer Price Index (CPI)')
     st.text('CPI is a measure of the average change over time in the prices paid by urban consumers for a market basket of consumer goods and services.')
+    st.write('This chart bellow shows the CPI changes through out years.')
     col1, col2 = st.columns([3, 1])
 
     end_year = int(main_categories_cpi_df.index.max())
@@ -112,6 +95,8 @@ with st.container():
     st.markdown('* Quits: Employees who left voluntarily. Exception: retirements or transfers to other locations are reported with Other Separations.')
     st.markdown('* Layoffs & Discharges: Involuntary separations initiated by the employer.')
     st.markdown('* Other Separations: Retirements, transfers to other locations; deaths; or separations due to employee disability.')
+
+    st.write('This chart bellow shows changes in the number of Job Openings, Hires, Quits, Layoff & Discharges, and Other Separations.')
 
     col1, col2 = st.columns([3, 1])
 

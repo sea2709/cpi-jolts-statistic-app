@@ -16,6 +16,9 @@ def load_state_employment_data():
 conn = init_connection()
 cur = conn.cursor()
 
+st.header('Job Openings and Labor Turnover Survey (JOLTS)')
+st.write('This chart below shows the comparision in the number of Hires, Layoffs & Discharges, Job Openings, Quits and Other Separations of a selected year among states in the US.')
+
 
 state_employment_df = load_state_employment_data()
 state_employment_df['YEAR'] = pd.DatetimeIndex(state_employment_df['DATE']).year
@@ -36,6 +39,7 @@ if (selected_year):
         "VALUE_Total separations": "Total separations",
     }, inplace=True)
     table.reset_index(inplace=True)
+    table['Other separations'] = table['Total separations'] - table['Quits'] - table['Layoffs and discharges']
 
     tab1, tab2 = st.tabs(["Chart", "Data"])
     with tab1:
@@ -99,7 +103,7 @@ if (selected_year):
                 },
                 "transform": [{
                     "lookup": "id",
-                    "from": {"data": {"name": "source"}, "key": "GEO_ID", "fields": ["Total separations"]}
+                    "from": {"data": {"name": "source"}, "key": "GEO_ID", "fields": ["Other separations"]}
                 }],
                 "projection": {
                     "type": "albersUsa"
@@ -107,7 +111,7 @@ if (selected_year):
                 "mark": "geoshape",
                 "encoding": {
                     "color": {
-                    "field": "Total separations",
+                    "field": "Other separations",
                     "type": "quantitative"
                     }
                 }
