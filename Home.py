@@ -31,6 +31,17 @@ def load_us_employment_data():
         + "WHERE geo_id = 'country/USA' AND att.unit = 'Level' AND REPORT = 'JOLTS' AND FREQUENCY = 'Annual'")
     return cur.fetch_pandas_all()
 
+@st.cache_resource
+def get_min_and_max_date_in_data(name):
+    if name == "employment":
+        table =  "BLS_EMPLOYMENT_TIMESERIES"
+    elif name == "price":
+        table =  "BLS_PRICE_TIMESERIES"
+
+    d = cur.execute(f"select min(DATE), max(DATE) FROM {table}").fetchone()
+
+    return d[0], d[1]
+
 us_anual_cpi_df = load_us_annual_cpi_data()
 us_anual_cpi_df['YEAR'] = pd.DatetimeIndex(us_anual_cpi_df['DATE']).year
 us_anual_cpi_df= us_anual_cpi_df.sort_values(by=['YEAR'])
@@ -47,6 +58,8 @@ main_categories_cpi_df = main_categories_cpi_df.merge(all_items_less_food_and_en
 with st.container():
     st.header('Consumer Price Index (CPI)')
     st.text('CPI is a measure of the average change over time in the prices paid by urban consumers for a market basket of consumer goods and services.')
+    min_date, max_date = get_min_and_max_date_in_data('price')
+    st.text(f'The current data is from {min_date} to {max_date}.')
     st.write('This chart bellow shows the CPI changes through out years.')
     col1, col2 = st.columns([3, 1])
 
@@ -90,6 +103,8 @@ employment_df = employment_df.merge(other_separations_df, how='outer', left_inde
 with st.container():
     st.header('Job Openings and Labor Turnover Survey (JOLTS)')
     st.text('JOLTS provides data on job openings, hires, and separations at the national and state level. The job openings rate can help measure the tightness of job markets.')
+    min_date, max_date = get_min_and_max_date_in_data('employment')
+    st.text(f'The current data is from {min_date} to {max_date}.')
     st.markdown('* Job Openings: All positions that are open (not filled) on the last business day of the month.')
     st.markdown('* Hires: All additions to the payroll during the month.')
     st.markdown('* Quits: Employees who left voluntarily. Exception: retirements or transfers to other locations are reported with Other Separations.')
