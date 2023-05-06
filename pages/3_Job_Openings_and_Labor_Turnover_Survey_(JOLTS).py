@@ -170,4 +170,6 @@ if (selected_year):
 
     with tab2:
         st.dataframe(table)
+
+    
     
